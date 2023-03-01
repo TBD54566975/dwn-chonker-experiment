@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <input type="file" name="chonker" id="chonker">
+  <button class="button" id="chonker_btn">Yeet Chonker</button>
+  <script type="module">
+    import { generateCid } from '/dist/multijank.js';
+
+    chonker_btn.addEventListener('click', async event => {
+      const formData = new FormData();
+
+      formData.append('file', chonker.files[0]);
+
+      const options = {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        }
+      };
+
+      const resp = await fetch('http://localhost:3000', options)
+      console.log(resp.status);
+
+      //! NOTE: What's below is simply a test to see what CID is generated in the browser
+
+      const file = chonker.files[0];
+      let streamReader = file.stream().getReader()
+
+      //! NOTE: "normalizing" readable stream so that ipfs-unixfs-importer will accept it
+      async function* itr(reader) {
+        let chunk;
+        do {
+          chunk = await reader.read()
+          yield chunk.value ?? new Uint8Array();
+        } while (!chunk.done);
+      }
+
+      const cid = await generateCid(itr(streamReader));
+      console.log(cid);
+    });
+  </script>
+</body>
+
+</html>
