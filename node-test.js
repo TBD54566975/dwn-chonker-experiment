@@ -3,5 +3,5 @@ import { generateCid } from './multijank.js';
 
 // this file generates a cid for test.move
 
-const rs = fs.createReadStream('./test.mov');
+let rs = fs.createReadStream('./test.mov');
 console.log(await generateCid(rs));

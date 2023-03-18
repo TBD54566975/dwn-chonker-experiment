@@ -2,6 +2,7 @@
     "type": "module",
     "dependencies": {
         "cors": "2.8.5",
+        "busboy": "1.6.0",
         "ipfs-unixfs-importer": "9.0.2",
         "express": "4.18.2",
         "@decentralized-identity/ion-tools": "1.0.5",

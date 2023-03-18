@@ -22,9 +22,6 @@
       const options = {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        }
       };
 
       const resp = await fetch('http://localhost:3000', options)
