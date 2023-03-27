@@ -35,28 +35,20 @@ app.post('/', async (req, res) => {
   const bb = busboy({ headers: req.headers });
 
   bb.on('file', async (name, stream, info) => {
-    const cidPt = new PassThrough();
-    stream.pipe(cidPt);
+    const cid = await generateCid(stream);
+    console.assert(cid === req.headers['cid'], `${cid} does not match ${req.headers['cid']}`);
 
-    //! NOTE: This is a HACK. i am normalizing the `req` stream by consuming it. the result of 
-    //!       consuming it and passing it through to other streams is that it removes
-    //!       inconsistencies caused by sending bytes over the wire. 
-    stream.resume();
+    // const record = await RecordsWrite.create({
+    //   schema: 'test',
+    //   dataCid: cid,
+    //   dataFormat: 'application/json',
+    //   authorizationSignatureInput: {
+    //     privateJwk: kp.privateJwk,
+    //     protectedHeader: { alg: 'ES256K', kid: `${longForm}#key-1` }
+    //   }
+    // });
 
-    const cid = await generateCid(cidPt);
-    console.log(cid);
-
-    const record = await RecordsWrite.create({
-      schema: 'test',
-      dataCid: cid,
-      dataFormat: 'application/json',
-      authorizationSignatureInput: {
-        privateJwk: kp.privateJwk,
-        protectedHeader: { alg: 'ES256K', kid: `${longForm}#key-1` }
-      }
-    });
-
-    // const result = await dwn.processMessage(longForm, record.toJSON(), processMessagePt);
+    // const result = await dwn.processMessage(longForm, record.toJSON(), stream);
     // console.log(result);
   });
 

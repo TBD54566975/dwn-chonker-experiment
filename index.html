@@ -24,9 +24,6 @@
         body: formData,
       };
 
-      const resp = await fetch('http://localhost:3000', options)
-      console.log(resp.status);
-
       //! NOTE: What's below is simply a test to see what CID is generated in the browser
 
       const file = chonker.files[0];
@@ -42,7 +39,10 @@
       }
 
       const cid = await generateCid(itr(streamReader));
-      console.log(cid);
+
+      options.headers = { 'cid': cid }
+      const resp = await fetch('http://localhost:3000', options)
+      console.log(resp.status);
     });
   </script>
 </body>
