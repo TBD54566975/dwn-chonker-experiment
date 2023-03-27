@@ -33,26 +33,32 @@ app.use(cors());
 
 app.post('/', async (req, res) => {
   const bb = busboy({ headers: req.headers });
+  const tmpFilePath = `tmp_${Date.now()}`;
 
   bb.on('file', async (name, stream, info) => {
-    const cid = await generateCid(stream);
-    console.assert(cid === req.headers['cid'], `${cid} does not match ${req.headers['cid']}`);
-
-    // const record = await RecordsWrite.create({
-    //   schema: 'test',
-    //   dataCid: cid,
-    //   dataFormat: 'application/json',
-    //   authorizationSignatureInput: {
-    //     privateJwk: kp.privateJwk,
-    //     protectedHeader: { alg: 'ES256K', kid: `${longForm}#key-1` }
-    //   }
-    // });
-
-    // const result = await dwn.processMessage(longForm, record.toJSON(), stream);
-    // console.log(result);
+    stream.pipe(fs.createWriteStream(tmpFilePath));
   });
 
-  bb.on('close', () => {
+  bb.on('close', async () => {
+    let rs = fs.createReadStream(tmpFilePath);
+    const cid = await generateCid(rs);
+    console.assert(cid === req.headers['cid'], `${cid} does not match ${req.headers['cid']}`);
+
+
+    const record = await RecordsWrite.create({
+      schema: 'test',
+      dataCid: cid,
+      dataFormat: 'application/json',
+      authorizationSignatureInput: {
+        privateJwk: kp.privateJwk,
+        protectedHeader: { alg: 'ES256K', kid: `${longForm}#key-1` }
+      }
+    });
+
+    rs = fs.createReadStream(tmpFilePath);
+    const result = await dwn.processMessage(longForm, record.toJSON(), rs);
+    console.log(result);
+
     return res.sendStatus(200);
   });
 
