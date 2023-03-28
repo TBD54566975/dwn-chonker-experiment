@@ -1,65 +1,33 @@
-import { Dwn, RecordsWrite } from '@tbd54566975/dwn-sdk-js';
+import { Dwn } from '@tbd54566975/dwn-sdk-js';
 import express from 'express';
-import { DID, generateKeyPair } from '@decentralized-identity/ion-tools';
 import cors from 'cors';
-import { PassThrough } from 'stream';
-import { generateCid } from './multijank.js'
 import busboy from 'busboy';
-import fs from 'fs';
-
-console.log(busboy);
-
-
-const kp = await generateKeyPair();
-console.log(kp);
-
-const did = new DID({
-  content: {
-    publicKeys: [{
-      id: 'key-1',
-      type: 'JsonWebKey2020',
-      publicKeyJwk: kp.publicJwk,
-      purposes: ['authentication']
-    }]
-  }
-});
-
-const longForm = await did.getURI('long');
+import EventEmitter from 'events';
 
 const dwn = await Dwn.create({});
 const app = express();
+const emitter = new EventEmitter();
 
 app.use(cors());
 
 app.post('/', async (req, res) => {
   const bb = busboy({ headers: req.headers });
-  const tmpFilePath = `tmp_${Date.now()}`;
+  const targetDid = req.headers['did'];
+  const message = req.headers['dwn-message'];
+  const requestEvent = Date.now();
+
+  emitter.once(requestEvent, (result) => {
+    console.log(result);
+    return res.status(result.status.code).json(result);
+  });
 
   bb.on('file', async (name, stream, info) => {
-    stream.pipe(fs.createWriteStream(tmpFilePath));
+    const result = await dwn.processMessage(targetDid, JSON.parse(message), stream);
+    emitter.emit(requestEvent, result);
   });
 
   bb.on('close', async () => {
-    let rs = fs.createReadStream(tmpFilePath);
-    const cid = await generateCid(rs);
-    console.assert(cid === req.headers['cid'], `${cid} does not match ${req.headers['cid']}`);
-
-
-    const record = await RecordsWrite.create({
-      schema: 'test',
-      dataCid: cid,
-      dataFormat: 'application/json',
-      authorizationSignatureInput: {
-        privateJwk: kp.privateJwk,
-        protectedHeader: { alg: 'ES256K', kid: `${longForm}#key-1` }
-      }
-    });
-
-    rs = fs.createReadStream(tmpFilePath);
-    const result = await dwn.processMessage(longForm, record.toJSON(), rs);
-    console.log(result);
-
-    return res.sendStatus(200);
+    console.log('request body processing done');
   });
 
   req.pipe(bb);

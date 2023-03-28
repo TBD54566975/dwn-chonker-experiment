@@ -12,20 +12,9 @@
   <input type="file" name="chonker" id="chonker">
   <button class="button" id="chonker_btn">Yeet Chonker</button>
   <script type="module">
-    import { generateCid } from '/dist/multijank.js';
+    import { generateChonkerRecordsWrite } from '/dist/multijank.js';
 
     chonker_btn.addEventListener('click', async event => {
-      const formData = new FormData();
-
-      formData.append('file', chonker.files[0]);
-
-      const options = {
-        method: 'POST',
-        body: formData,
-      };
-
-      //! NOTE: What's below is simply a test to see what CID is generated in the browser
-
       const file = chonker.files[0];
       let streamReader = file.stream().getReader()
 
@@ -38,10 +27,21 @@
         } while (!chunk.done);
       }
 
-      const cid = await generateCid(itr(streamReader));
+      const { did, record } = await generateChonkerRecordsWrite(itr(streamReader));
 
-      options.headers = { 'cid': cid }
+      const formData = new FormData();
+      formData.append('file', chonker.files[0]);
+
+      const options = {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'did': did,
+          'dwn-message': JSON.stringify(record)
+        }
+      };
       const resp = await fetch('http://localhost:3000', options)
+
       console.log(resp.status);
     });
   </script>
