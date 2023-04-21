@@ -1,5 +1,6 @@
 import { Dwn } from '@tbd54566975/dwn-sdk-js';
 import express from 'express';
+import ContentType from 'content-type';
 import cors from 'cors';
 import busboy from 'busboy';
 import EventEmitter from 'events';
@@ -11,19 +12,50 @@ const emitter = new EventEmitter();
 app.use(cors());
 
 app.post('/', async (req, res) => {
-  const bb = busboy({ headers: req.headers });
-  const targetDid = req.headers['did'];
-  const message = req.headers['dwn-message'];
-  const requestEvent = Date.now();
+  let dwnRequest = req.headers['dwn-message'];
+  if (!dwnRequest) {
+    // TODO: decide if we want to send a jsonrpc response back
+    return res.sendStatus(400);
+  }
 
-  emitter.once(requestEvent, (result) => {
-    console.log(result);
-    return res.status(result.status.code).json(result);
+  // TODO: handle parsing error
+  dwnRequest = JSON.parse(dwnRequest);
+
+  let contentType;
+  if ('content-type' in req.headers) {
+    contentType = ContentType.parse(req);
+  }
+
+  if (!contentType) {
+    // this means there is no data associated to the message in the request body.
+    const { params } = dwnRequest;
+    const reply = await dwn.processMessage(params.target, params.message);
+    const jsonRpcResponse = {
+      jsonrpc: '2.0',
+      id: dwnRequest.id,
+      result: reply
+    }
+
+    return res.status(200).json(jsonRpcResponse);
+  }
+
+  // TODO: try/catch busboy. itll bork if content-type isnt supported 
+  const bb = busboy({ headers: req.headers });
+  const { id: requestId, params } = dwnRequest;
+
+  emitter.once(requestId, reply => {
+    const jsonRpcResponse = {
+      jsonrpc: '2.0',
+      id: dwnRequest.id,
+      result: reply
+    }
+
+    return res.status(200).json(jsonRpcResponse);
   });
 
   bb.on('file', async (name, stream, info) => {
-    const result = await dwn.processMessage(targetDid, JSON.parse(message), stream);
-    emitter.emit(requestEvent, result);
+    const reply = await dwn.processMessage(params.target, params.message, stream);
+    emitter.emit(requestId, reply);
   });
 
   bb.on('close', async () => {
