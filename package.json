@@ -2,12 +2,12 @@
     "type": "module",
     "dependencies": {
         "@decentralized-identity/ion-tools": "1.0.6",
-        "@tbd54566975/dwn-sdk-js": "0.0.30",
+        "@tbd54566975/dwn-sdk-js": "0.0.37-unstable-2023-07-05-mjs-experimentation-5",
         "busboy": "1.6.0",
         "content-type": "^1.0.5",
         "cors": "2.8.5",
         "express": "4.18.2",
-        "ipfs-unixfs-importer": "9.0.2"
+        "ipfs-unixfs-importer": "15.1.6"
     },
     "devDependencies": {
         "esbuild": "0.17.10",
