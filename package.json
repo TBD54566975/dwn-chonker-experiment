@@ -1,7 +1,7 @@
 {
     "type": "module",
     "dependencies": {
-        "@decentralized-identity/ion-tools": "1.0.6",
+        "@decentralized-identity/ion-tools": "1.1.1",
         "@tbd54566975/dwn-sdk-js": "0.0.30",
         "busboy": "1.6.0",
         "content-type": "^1.0.5",
